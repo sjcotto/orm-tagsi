@@ -51,6 +51,7 @@ public class TareaUI extends UI {
 	private Persona person;
 	private Estudiante estudiante;
 	private OptionGroup op;
+	protected Api api;
 
 	@Override
 	protected void init(VaadinRequest request) {
@@ -61,6 +62,8 @@ public class TareaUI extends UI {
 		op = new OptionGroup("Acceso a datos");
 		op.addItem("Hibernate");
 		op.addItem("Sql Nativo");
+
+		op.setValue("Hibernate");
 
 		layout.addComponent(op);
 		initTabs(layout);
@@ -147,6 +150,8 @@ public class TareaUI extends UI {
 
 		btn.addClickListener(new ClickListener() {
 
+			private Api api;
+
 			@Override
 			public void buttonClick(ClickEvent event) {
 				// buscamos y traemos a todas los estudiantes que tengan ese
@@ -156,8 +161,13 @@ public class TareaUI extends UI {
 
 					table.removeAllItems();
 
-					Api api = Factory.getInstance().setOrm(true)
-							.getController();
+					if (op.getValue().equals("Hibernate")) {
+						api = Factory.getInstance().setOrm(true)
+								.getController();
+					} else {
+						api = Factory.getInstance().setOrm(false)
+								.getController();
+					}
 
 					List<Estudiante> list = api.buscarPorApellido(search
 							.getValue());
@@ -190,12 +200,17 @@ public class TareaUI extends UI {
 		Button btn2 = new Button("Inscripciones");
 		btn2.addClickListener(new ClickListener() {
 
+			private Api api;
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public void buttonClick(ClickEvent event) {
 
-				final Api api = Factory.getInstance().setOrm(true)
-						.getController();
+				if (op.getValue().equals("Hibernate")) {
+					api = Factory.getInstance().setOrm(true).getController();
+				} else {
+					api = Factory.getInstance().setOrm(false).getController();
+				}
 
 				ver.removeAllComponents();
 
@@ -249,21 +264,29 @@ public class TareaUI extends UI {
 
 			@SuppressWarnings("unchecked")
 			private void updateTable(Api api) {
-				List<Inscripcione> list = api
-						.obtenerCursosPorEstudiante((Integer) table.getValue());
-				table_insc.removeAllItems();
-				for (Inscripcione ins : list) {
-					table_insc.addItem(ins.getId());
-					table_insc.getContainerProperty(ins.getId(), "fecha")
-							.setValue(ins.getFecha());
-					table_insc.getContainerProperty(ins.getId(), "nombre")
-							.setValue(ins.getCurso().getNombre());
-					table_insc.getContainerProperty(ins.getId(), "creditos")
-							.setValue(ins.getCurso().getCreditos());
-					table_insc.getContainerProperty(ins.getId(), "codigo")
-							.setValue(ins.getCurso().getCodigo());
+				List<Inscripcione> list;
+				try {
+					list = api.obtenerCursosPorEstudiante((Integer) table
+							.getValue());
+					table_insc.removeAllItems();
+					for (Inscripcione ins : list) {
+						table_insc.addItem(ins.getId());
+						table_insc.getContainerProperty(ins.getId(), "fecha")
+								.setValue(ins.getFecha());
+						table_insc.getContainerProperty(ins.getId(), "nombre")
+								.setValue(ins.getCurso().getNombre());
+						table_insc
+								.getContainerProperty(ins.getId(), "creditos")
+								.setValue(ins.getCurso().getCreditos());
+						table_insc.getContainerProperty(ins.getId(), "codigo")
+								.setValue(ins.getCurso().getCodigo());
+					}
+					table_insc.setVisible(true);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				table_insc.setVisible(true);
+
 			}
 		});
 
@@ -310,8 +333,14 @@ public class TareaUI extends UI {
 					estudiante.setPersona(person);
 					estudiante.setId(person.getId());
 
-					Api api = Factory.getInstance().setOrm(true)
-							.getController();
+					if (op.getValue().equals("Hibernate")) {
+						api = Factory.getInstance().setOrm(true)
+								.getController();
+					} else {
+						api = Factory.getInstance().setOrm(false)
+								.getController();
+					}
+
 					api.registrarEstudiante(estudiante);
 					Notification.show("Estudiante guardado");
 					setAltaEstudianteLayout(v1);
