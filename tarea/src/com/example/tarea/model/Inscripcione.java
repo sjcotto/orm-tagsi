@@ -2,6 +2,7 @@ package com.example.tarea.model;
 
 import java.io.Serializable;
 import javax.persistence.*;
+
 import java.util.Date;
 
 
@@ -21,12 +22,12 @@ public class Inscripcione implements Serializable {
 	private Date fecha;
 
 	//bi-directional many-to-one association to Estudiante
-	@ManyToOne
+	@ManyToOne 
 	@JoinColumn(name="estudiante",insertable = false, updatable = false)
 	private Estudiante estudianteBean;
 
 	//bi-directional many-to-one association to Curso
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name="codigo",insertable = false, updatable = false)
 	private Curso curso;
 

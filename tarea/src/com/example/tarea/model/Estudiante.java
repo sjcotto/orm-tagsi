@@ -16,7 +16,7 @@ public class Estudiante implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	//@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	//@GeneratedValue(strategy = GenerationType.AUTO)
 	private int id;
 	
 	
@@ -26,12 +26,13 @@ public class Estudiante implements Serializable {
 	private String matricula;
 
 	//bi-directional one-to-one association to Persona
-	@OneToOne(cascade = {CascadeType.ALL })
+	//@OneToOne(cascade = {CascadeType.ALL },fetch = FetchType.EAGER)
+	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name="id")
 	private Persona persona;
 
 	//bi-directional many-to-one association to Inscripcione
-	@OneToMany(mappedBy="estudianteBean")
+	@OneToMany(mappedBy="estudianteBean",cascade = {CascadeType.ALL },fetch = FetchType.EAGER)
 	private List<Inscripcione> inscripciones;
 
 	public Estudiante() {
