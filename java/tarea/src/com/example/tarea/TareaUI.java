@@ -11,17 +11,21 @@ import com.example.tarea.model.Estudiante;
 import com.example.tarea.model.Inscripcione;
 import com.example.tarea.model.InscripcionePK;
 import com.example.tarea.model.Persona;
+import com.example.tarea.model.Profesor;
 import com.vaadin.annotations.Theme;
 import com.vaadin.data.Item;
 import com.vaadin.data.util.BeanContainer;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.ItemClickEvent.ItemClickListener;
+import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.themes.Reindeer;
+import com.vaadin.ui.themes.Runo;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.DateField;
@@ -52,26 +56,50 @@ public class TareaUI extends UI {
 	private Estudiante estudiante;
 	private OptionGroup op;
 	protected Api api;
+	private Curso curso;
+	private Table tableCursos;
 
 	@Override
 	protected void init(VaadinRequest request) {
+
 		final VerticalLayout layout = new VerticalLayout();
 		layout.setMargin(true);
 		setContent(layout);
+
+		Label label = new Label(
+				"Laboratorio 1 - PoC Java Hibernate - Tagsi 2013 Grupo A",
+				Label.CONTENT_XHTML);
+		Label label2 = new Label("Caso de estudio sobre ORMs - Hibernate",
+				Label.CONTENT_XHTML);
 
 		op = new OptionGroup("Acceso a datos");
 		op.addItem("Hibernate");
 		op.addItem("Sql Nativo");
 
-		op.setValue("Hibernate");
+		op.setValue("Sql Nativo");
 
-		layout.addComponent(op);
+		HorizontalLayout h = new HorizontalLayout();
+		VerticalLayout ver = new VerticalLayout();
+		
+		ver.addComponent(label);
+		ver.addComponent(label2);
+
+		h.addComponent(ver);
+		h.addComponent(op);
+		
+		h.setExpandRatio(ver, 1);
+		
+		label.setStyleName(Runo.LABEL_H1);
+		label2.setStyleName(Runo.LABEL_H2);
+
+		layout.addComponent(h);
+
 		initTabs(layout);
 
 	}
 
 	private void initTabs(VerticalLayout layout) {
-		// TODO Auto-generated method stub
+
 		TabSheet tab = new TabSheet();
 
 		VerticalLayout v1 = new VerticalLayout();
@@ -96,20 +124,60 @@ public class TareaUI extends UI {
 
 	private void setBuscarCursoLayout(VerticalLayout v4) {
 
-		BeanContainer<Integer, Curso> beans = new BeanContainer<Integer, Curso>(
-				Curso.class);
-		final Table table = new Table("Cursos", beans);
-		table.setVisibleColumns(new String[] { "codigo", "nombre", "creditos" });
+		v4.setMargin(true);
+		v4.setSpacing(true);
 
-		Api api = Factory.getInstance().setOrm(true).getController();
-		List<Curso> list = api.obtenerCursos();
+		Button btnRepfres = new Button("Actualizar");
+		btnRepfres.setIcon(new ThemeResource("refresh.png"));
+
+		btnRepfres.setStyleName(Runo.BUTTON_LINK);
+
+		final BeanContainer<Integer, Curso> beans = new BeanContainer<Integer, Curso>(
+				Curso.class);
+		tableCursos = new Table("Cursos", beans);
+
+		btnRepfres.addClickListener(new ClickListener() {
+
+			@Override
+			public void buttonClick(ClickEvent event) {
+
+				updateCursosTable(beans);
+			}
+		});
+
+		updateCursosTable(beans);
+
+		v4.addComponent(btnRepfres);
+		v4.addComponent(tableCursos);
+
+		tableCursos.setWidth("250px");
+		tableCursos.setHeight("350px");
+
+	}
+
+	private void updateCursosTable(BeanContainer<Integer, Curso> beans) {
+
+		tableCursos.removeAllItems();
+		tableCursos.setVisibleColumns(new String[] { "codigo", "nombre",
+				"creditos" });
+
+		if (op.getValue().equals("Hibernate")) {
+			api = Factory.getInstance().setOrm(true).getController();
+		} else {
+			api = Factory.getInstance().setOrm(false).getController();
+		}
+
+		List<Curso> list = null;
+		try {
+			list = api.obtenerCursos();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		beans.setBeanIdProperty("codigo");
 		beans.addAll(list);
 		beans.setBeanIdProperty("codigo");
-
-		v4.addComponent(table);
-
 	}
 
 	private void setBuscarEstudiantesLayout(VerticalLayout v2) {
@@ -137,11 +205,17 @@ public class TareaUI extends UI {
 
 		h.addComponent(table);
 
+		table.setWidth("400px");
+		table.setHeight("250px");
+
 		final VerticalLayout ver = new VerticalLayout();
 		final Table table_insc = new Table("Inscripciones");
 		ver.addComponent(table_insc);
 		h.addComponent(ver);
 		table_insc.setVisible(false);
+
+		table_insc.setWidth("400px");
+		table_insc.setHeight("250px");
 
 		table_insc.addContainerProperty("fecha", Date.class, null);
 		table_insc.addContainerProperty("codigo", Integer.class, 0);
@@ -195,17 +269,19 @@ public class TareaUI extends UI {
 
 		v2.addComponent(search);
 		v2.addComponent(btn);
-		v2.addComponent(h);
 
 		Button btn2 = new Button("Inscripciones");
 		btn2.addClickListener(new ClickListener() {
-
-			private Api api;
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public void buttonClick(ClickEvent event) {
 
+				if (table.getValue() == null) {
+					Notification
+							.show("Debe seleccionar un estudiante de la tabla");
+					return;
+				}
 				if (op.getValue().equals("Hibernate")) {
 					api = Factory.getInstance().setOrm(true).getController();
 				} else {
@@ -214,7 +290,7 @@ public class TareaUI extends UI {
 
 				ver.removeAllComponents();
 
-				updateTable(api);
+				updateTable();
 
 				ver.addComponent(table_insc);
 
@@ -222,7 +298,13 @@ public class TareaUI extends UI {
 				final DateField date = new DateField("Fecha Inscripcion");
 				final ComboBox combo = new ComboBox();
 				combo.setInputPrompt("Seleccione el curso");
-				List<Curso> list2 = api.obtenerCursos();
+				List<Curso> list2 = null;
+				try {
+					list2 = api.obtenerCursos();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				for (Curso c : list2) {
 					combo.addItem(c);
 					combo.setItemCaption(c,
@@ -253,7 +335,7 @@ public class TareaUI extends UI {
 									.getMessage());
 						}
 
-						updateTable(api);
+						updateTable();
 					}
 				});
 				form.addComponent(date);
@@ -263,7 +345,7 @@ public class TareaUI extends UI {
 			}
 
 			@SuppressWarnings("unchecked")
-			private void updateTable(Api api) {
+			private void updateTable() {
 				List<Inscripcione> list;
 				try {
 					list = api.obtenerCursosPorEstudiante((Integer) table
@@ -291,7 +373,7 @@ public class TareaUI extends UI {
 		});
 
 		v2.addComponent(btn2);
-
+		v2.addComponent(h);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -351,7 +433,7 @@ public class TareaUI extends UI {
 
 			}
 		});
-		save.setStyleName(Reindeer.BUTTON_SMALL);
+
 		form.addComponent(save);
 		v1.addComponent(form);
 
@@ -362,7 +444,7 @@ public class TareaUI extends UI {
 
 		v1.removeAllComponents();
 
-		final Curso curso = new Curso();
+		curso = new Curso();
 		BeanItem<Curso> item = new BeanItem<Curso>(curso);
 		final Form f1 = new Form();
 
@@ -413,8 +495,28 @@ public class TareaUI extends UI {
 					((TextField) f).setNullRepresentation("");
 				}
 
-				if (propertyId.equals("responsable")) {
-					// tenemos que traer a los profesores
+				if (propertyId.equals("profesor")) {
+					ComboBox combo = new ComboBox("Profesor Responsable");
+					if (op.getValue().equals("Hibernate")) {
+						api = Factory.getInstance().setOrm(true)
+								.getController();
+					} else {
+						api = Factory.getInstance().setOrm(false)
+								.getController();
+					}
+					List<Profesor> list = null;
+					try {
+						list = api.obtenerProfesores();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					for (Profesor p : list) {
+						combo.addItem(p);
+						combo.setItemCaption(p, p.getPersona().getNombre());
+					}
+					return combo;
+
 				}
 
 				return f;

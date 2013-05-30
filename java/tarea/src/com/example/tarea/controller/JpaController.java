@@ -12,6 +12,7 @@ import com.example.tarea.model.Curso;
 import com.example.tarea.model.Estudiante;
 import com.example.tarea.model.Inscripcione;
 import com.example.tarea.model.Persona;
+import com.example.tarea.model.Profesor;
 
 public class JpaController implements Api {
 
@@ -46,7 +47,7 @@ public class JpaController implements Api {
 				.createEntityManager();
 		entityManager.getTransaction().begin();
 		o = entityManager.merge(o);
-		
+
 		entityManager.getTransaction().commit();
 		entityManager.close();
 	}
@@ -65,11 +66,11 @@ public class JpaController implements Api {
 		EntityManager entityManager = entityManagerFactory
 				.createEntityManager();
 		entityManager.getTransaction().begin();
-		
+
 		Estudiante est = entityManager.find(Estudiante.class, estId);
 		entityManager.getTransaction().commit();
 		entityManager.close();
-		
+
 		est.getInscripciones().add(c);
 		this.update(est);
 	}
@@ -80,13 +81,15 @@ public class JpaController implements Api {
 		EntityManager entityManager = entityManagerFactory
 				.createEntityManager();
 		entityManager.getTransaction().begin();
-		Query query = entityManager.createQuery("Select u from Estudiante u where u.persona.apellido = '"+apellido+"'");
+		Query query = entityManager
+				.createQuery("Select u from Estudiante u where u.persona.apellido = '"
+						+ apellido + "'");
 		System.out.println(query.toString());
 		List list = query.getResultList();
 		entityManager.getTransaction().commit();
 		entityManager.close();
 		return list;
-		
+
 	}
 
 	@Override
@@ -95,26 +98,36 @@ public class JpaController implements Api {
 		EntityManager entityManager = entityManagerFactory
 				.createEntityManager();
 		entityManager.getTransaction().begin();
-		
+
 		Estudiante est = entityManager.find(Estudiante.class, estId);
 		entityManager.getTransaction().commit();
 		entityManager.close();
-		
+
 		List<Inscripcione> list = est.getInscripciones();
-		
+
 		return list;
-		
-		
+
 	}
 
 	@Override
-	public void registrarCurso(Curso c) {
-		save(c);
+	public int registrarCurso(Curso c) {
+		Curso r = (Curso) save(c);
+		return r.getCodigo();
 	}
 
 	@Override
 	public List<Curso> obtenerCursosMenosInscriptos() {
 
+		//where u.id.estudiante IN (select g.id.estudiante from Inscripcione g GROUP BY g.id.estudiante HAVING COUNT(g) < 2)
+		
+		EntityManager entityManager = entityManagerFactory
+				.createEntityManager();
+		entityManager.getTransaction().begin();
+		Query query = entityManager
+				.createQuery("Select c from Curso c,Inscripcione u where c.codigo = u.id.codigo and (select count(distinct g) from Inscripcione g where u.id.estudiante = g.id.estudiante) < 2 GROUP BY u.id.codigo HAVING COUNT(u) > 10");
+		List list = query.getResultList();
+		entityManager.getTransaction().commit();
+		entityManager.close();
 		return null;
 	}
 
@@ -129,6 +142,20 @@ public class JpaController implements Api {
 		entityManager.getTransaction().commit();
 		entityManager.close();
 		return list;
+	}
+
+	@Override
+	public List<Profesor> obtenerProfesores() {
+
+		EntityManager entityManager = entityManagerFactory
+				.createEntityManager();
+		entityManager.getTransaction().begin();
+		Query query = entityManager.createQuery("Select u from Profesor u ");
+		List list = query.getResultList();
+		entityManager.getTransaction().commit();
+		entityManager.close();
+		return list;
+
 	}
 
 }
